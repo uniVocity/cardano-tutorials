@@ -156,4 +156,182 @@ cat seed.txt
 >intact engine crumble rotate umbrella flee wire talk creek employ rural state wreck pluck settle later okay foot assault general type mutual excuse valid
 ```
 
-With the seed phrase *insecurely* stored in a plain text file, we can proceed to the next steps.
+With the command above your seed phrase will be *insecurely* stored in a plain 
+text file named `seed.txt`. With this we can proceed to the next steps.
+
+## Generating private keys
+
+The private key is the actual identifier of a wallet. You can derive a private
+key from a seed phrase with:
+
+`./cardano-address key from-recovery-phrase <STYLE>`
+
+Where <STYLE> is one of:
+
+ * Byron (deprecated): used for Byron wallets created by Daedalus 
+ * Icarus (deprecated): used for Byron wallets created in Yoroi
+ * Jormungandr (deprecated): used for the incentivized testnet (ITN) 
+ * Shelley: basically this is what you should use for new wallets 100% of the time
+
+To create the private key from a seed phrase, execute:
+```shell script
+cat seed.txt | ./cardano-address key from-recovery-phrase Shelley > private_key.txt
+cat private_key.txt
+>xprv13zxmjna3a2v32wtnj60jw53fm4fy54737r9gj4pqape8sn4vgewcm8xsfeuh8f2404fung9lkgedhayalfwepa2he3qwmxppqv6tv36tc6epzmznfgy5j4glkg8lmahyr40lvhthzw9muumdf9guzrvsuqu7740q
+```
+
+The above inputs the seed phrase in `seed.txt` to command  
+`cardano-address key from-recovery-phrase Shelley`, and outputs a 
+`private_key.txt` file with your private key *in plain text*.
+
+> **NOTE:** keeping seed phrases or private keys in plain text files is an 
+> obvious security risk
+
+## Generating a public key
+
+The public key is the key you can use to identify your wallet on the blockchain.
+You can obtain the public key for your wallet using:
+
+```shell script
+cat private_key.txt | ./cardano-address key public > public_key.txt
+cat public_key.txt
+>xpub1lxy8vqgzt00dq34u8476ulp60px6aggunztnf98vdn2c4rguwtjyh34jz9k9xjsff923lvs0lhmwg82l7ewhwyutheek6j23cyxepcqhau52r
+```
+
+Notice you can't send ADA to this address. For that you need an account.
+
+### Understanding the HD wallet address format (BIP-44)
+
+Basically from the private key, we derive more keys other than just the public
+key: you can also derive accounts and payment addresses for each account. 
+
+Everything is determined by a *derivation path*, in the following format:
+
+```
+private_key / purpose / coin_type / account_index / change / address_index
+```
+
+Some of these elements are pretty much fixed constants:
+
+ * **purpose** = `1852` don't ask me why, it's a constant determined by a higher being
+ 
+ * **coin_type** = `1815` which means Cardano's ADA 
+ ([there's a standard for that](https://github.com/satoshilabs/slips/blob/master/slip-0044.md), 
+ and we were assigned this number)
+ 
+ * **change** = `0` which represents a "receiving" address. 1 means "change" address
+  and as far as I know you won't usually need to worry about this.
+  
+If you are interested in generating payment addresses for a wallet, you simply
+don't have to think about this stuff.
+ 
+So let's move on to what was left unexplained:
+
+ * **account_index**: typically `0`, but can be any number up to `2^31`. Accounts
+ mean you can segregate payments received into your wallet into separate buckets.
+ You could create a "personal account" on index `0`, a "business account" on 
+ account index `1`, a "savings account" in index `100` and so on.
+ 
+> **IMPORTANT:** All desktop/mobile wallets around currently support account 0 
+> only. If you create account 1, 2 or whatever the transactions associated with
+> these accounts will not show up 
+
+ * **address_index**: a sequential index for a payment address, starting at `0`.
+  Increment the address_index every time you need a new address to share with
+  someone, so they can send funds to you. You can reuse payment addresses but 
+  then multiple people will be able to see how much you are receiving through
+  that same payment address. You can generate up to `2^31` addresses for each
+  account.
+  
+> **IMPORTANT:** The BIP-44 protocol basically looks for 20 transactions after 
+> the last transaction received. So if you receive a payment on address generated
+> with address_index = 6, your wallet will only display the money received on 
+> addresses from 0 to 26. 
+>
+> If you received payment on address with address_index = 30, the funds will not
+> be displayed to you even though it's on the blockchain. It will only appear
+> once there is a transaction in some address where address_index is between 10
+> and 29.
+>
+> This applies for all current desktop/mobile/hardware wallets, so be aware.
+> The gap limit can be customized on some wallets, but increasing it reduces 
+> synchronization performance.
+
+
+## Generating a public root key
+
+To generate payment addresses for an account of your wallet you need the 
+account derivation path - also known as the public root key. This is
+essentially the initial section of the HD address:
+
+```
+private_key / purpose / coin_type / account_index 
+``` 
+
+Back to the command line, we can create the root key for account `0` with:
+
+```shell script
+cat private_key.txt | ./cardano-address key child 1852H/1815H/0H > public_root_key.txt
+cat public_root_key.txt 
+> xprv1fpwz27sk7yht78d4rwaq3a2e9p744w8xz0fe9rqpgkkxsk4vgew5tz6zfkw46xql705c8nzwulswap4zhq3vs3vwcj5cmtsqlxu3nstxheqxwqg2fj608vge2aja5yf5ug2603vkkp8s8jljktkrqzrqn5gykw0q
+```
+
+Here we input the private key, and generate a derivation path with the `1852`
+and `1815` constants presented earlier, plus the account index. 
+
+Notice that every constant in the path is followed by `H`, which stands for "hardened".
+This means the public root key was derived using the private key.
+
+> **NOTICE:** although the `cardano-address` utility will give you an output that
+> looks OK if you don't type in the 'H' after each constant, no payment address
+> generated later on will be valid. If you send funds to such addresses they will
+> be lost.
+
+The `public_root_key` allows you or others to generate payment addresses securely
+without having access to your private key. You can share this key with the world.
+
+The public root key is useful to enable third parties to generate payment 
+addresses in your behalf. Notice that the payment addresses generated from it
+are bound to the account. In the example above, we can only derive payment 
+addresses for account `0`.
+  
+## Generating the full derivation path
+
+With the public root key ready, we only have to fill out the remaining bits
+of the derivation path to get a full path:
+
+`change / address_index`
+
+As already mentioned, `change = 0`, and the address index starts from `0`. So
+we can generate the full derivation address (still not a payment address) with:
+
+```shell script
+cat public_root_key.txt | ./cardano-address key child 0/0 > key_for_address_0.txt
+cat key_for_address_0.txt 
+> xprv1zr9df87ljsw3gnycnxwkddk7h2yt25s7fw4r4t64zn527h4vgew66rvaurcrlfv8hhr2gkmehqen0he6m7qtn28yynx3jmjgctns7a9flpl5pm6qfalgfwhhzduvxjx3ktemdpy8z2ll5uqre843rvn8dccwmy8q
+```
+
+That will generate a key which maps to account `0`, address `0` in your wallet. 
+Notice the private key has not been used here.
+
+We can keep generating full derivation paths for more addresses by incrementing
+the `address_index` part:
+
+```shell script
+cat public_root_key.txt | ./cardano-address key child 0/1 > key_for_address_1.txt
+cat key_for_address_1.txt 
+xprv1eztn66apmztxc3sm32fgyfvduzwcc8xanju5mhqa324nkh4vgewuqnkmxkczqatjy4pmsn6hvq2mrz03nknehssa5kyenh9vhvfge4dye4lawr2h2hyz2yym64kau9dafgpy3xesuyjtm709yep9uqcdactukjxa
+```
+
+> **NOTICE:** nothing prevents you from creating an address straight to some crazy
+> index such as 1 million, e.g. `cardano-address key child 0/1000000`, but if 
+> you send funds to a payment address generated from that key, it won't show up
+> in your wallet as by default it expects one transaction every 20 addresses in 
+> sequence.
+
+## Generating a payment address
+
+Finally, once you have the address key with the full derivation path, you can 
+generate a payment address which people can send funds to:
+
+ 
