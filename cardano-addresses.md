@@ -5,7 +5,12 @@ what - addresses.
 
 You can find its source code in the following repository: 
 https://github.com/input-output-hk/cardano-addresses,
-but most users would simply want the compiled binaries from
+but most users would simply want the compiled binaries from the 
+[release page](https://github.com/input-output-hk/cardano-addresses/releases)
+
+> **IMPORTANT** All of the steps described here apply to linux. You will have to
+> adapt the commands to make things work on Windows, but the sequence of steps 
+> is the same.
 
 ## Installation
 
