@@ -271,8 +271,8 @@ private_key / purpose / coin_type / account_index
 Back to the command line, we can create the root key for account `0` with:
 
 ```shell script
-cat private_key.txt | ./cardano-address key child 1852H/1815H/0H > public_root_key.txt
-cat public_root_key.txt 
+cat private_key.txt | ./cardano-address key child 1852H/1815H/0H > account_0_key_path.txt
+cat account_0_key_path.txt 
 > xprv1fpwz27sk7yht78d4rwaq3a2e9p744w8xz0fe9rqpgkkxsk4vgew5tz6zfkw46xql705c8nzwulswap4zhq3vs3vwcj5cmtsqlxu3nstxheqxwqg2fj608vge2aja5yf5ug2603vkkp8s8jljktkrqzrqn5gykw0q
 ```
 
@@ -280,14 +280,22 @@ Here we input the private key, and generate a derivation path with the `1852`
 and `1815` constants presented earlier, plus the account index. 
 
 Notice that every constant in the path is followed by `H`, which stands for "hardened".
-This means the public root key was derived using the private key.
+This means the key path was derived using the private key.
 
 > **NOTICE:** although the `cardano-address` utility will give you an output that
 > looks OK if you don't type in the 'H' after each constant, no payment address
 > generated later on will be valid. If you send funds to such addresses they will
 > be lost.
 
-The `public_root_key` allows you or others to generate payment addresses securely
+From the key path, we can generate the public root key:
+
+```shell script
+cat account_0_key_path.txt | ./cardano-address key public > account_0_public_root_key.txt 
+cat account_0_public_root_key.txt
+xpub1exevcxkw9ldsm7szljjyymesml0vzpc59swplz7ftnclk2yamm7kd0jqvuqs5n957wc3j4m9mggnfcs45lzedvz0q09l9vhvxqyxp8gpdvt5a
+```
+
+The public root key allows you or others to generate payment addresses securely
 without having access to your private key. You can share this key with the world.
 
 The public root key is useful to enable third parties to generate payment 
@@ -306,9 +314,9 @@ As already mentioned, `change = 0`, and the address index starts from `0`. So
 we can generate the full derivation address (still not a payment address) with:
 
 ```shell script
-cat public_root_key.txt | ./cardano-address key child 0/0 > key_for_address_0.txt
-cat key_for_address_0.txt 
-> xprv1zr9df87ljsw3gnycnxwkddk7h2yt25s7fw4r4t64zn527h4vgew66rvaurcrlfv8hhr2gkmehqen0he6m7qtn28yynx3jmjgctns7a9flpl5pm6qfalgfwhhzduvxjx3ktemdpy8z2ll5uqre843rvn8dccwmy8q
+cat account_0_public_root_key.txt | ./cardano-address key child 0/0 > key_for_account_0_address_0.txt
+cat key_for_account_0_address_0.txt 
+> xpub1ccntmvkwgwlzv5r03vpy2n9nruy5x5d5kzww3egpvga7zf2v0gg2n7rlgrh5qnm7sja0wymccdydrvhnk6zgwy4llfcq8j0tzxexwmsn09nwm
 ```
 
 That will generate a key which maps to account `0`, address `0` in your wallet. 
@@ -318,9 +326,9 @@ We can keep generating full derivation paths for more addresses by incrementing
 the `address_index` part:
 
 ```shell script
-cat public_root_key.txt | ./cardano-address key child 0/1 > key_for_address_1.txt
-cat key_for_address_1.txt 
-xprv1eztn66apmztxc3sm32fgyfvduzwcc8xanju5mhqa324nkh4vgewuqnkmxkczqatjy4pmsn6hvq2mrz03nknehssa5kyenh9vhvfge4dye4lawr2h2hyz2yym64kau9dafgpy3xesuyjtm709yep9uqcdactukjxa
+cat account_0_public_root_key.txt | ./cardano-address key child 0/1 > key_for_account_0_address_1.txt
+cat key_for_account_0_address_1.txt 
+xpub1kg7vl5c7nw9ee062u56xrv6dvpsd6lf3auwhggzh2e7edue4hdp6fntl6ux4w4wgy5gfh4tdmc2m6jszfzdnpcfyhhu72fjztcpsmms22e64k
 ```
 
 > **NOTICE:** nothing prevents you from creating an address straight to some crazy
@@ -334,4 +342,19 @@ xprv1eztn66apmztxc3sm32fgyfvduzwcc8xanju5mhqa324nkh4vgewuqnkmxkczqatjy4pmsn6hvq2
 Finally, once you have the address key with the full derivation path, you can 
 generate a payment address which people can send funds to:
 
+```shell script
+cat key_for_account_0_address_0.txt | ./cardano-address address payment --network-tag 1 > pay_to_account_0_address_0.txt
+cat pay_to_account_0_address_0.txt
+> addr1v8fet8gavr6elqt6q50skkjf025zthqu6vr56l5k39sp9aqlvz2g4
+``` 
+
+If you send `addr1v8fet8gavr6elqt6q50skkjf025zthqu6vr56l5k39sp9aqlvz2g4` to 
+others, they will be able to send fund to you.
+
+Notice that `--network-tag` was set to `1`. This parameter accepts two values:
+
+ * `0` for testnet
  
+ * `1` for mainnet
+ 
+Make sure to use the appropriate network tag for your environment.
