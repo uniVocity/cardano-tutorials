@@ -18,6 +18,9 @@ Feel free to submit pull requests with your guides and tutorials too.
 
  * [cardano-addresses](./cardano-addresses.md): create seed phrases, wallet keys
  payment addresses, etc
+ 
+ * [stake pool setup](./pool_setup/base_setup.md): create seed phrases, wallet keys
+  payment addresses, etc
 
 ## Support this project 
 
