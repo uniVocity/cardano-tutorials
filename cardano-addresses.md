@@ -248,7 +248,7 @@ So let's move on to what was left unexplained:
   that same payment address. You can generate up to `2^31` addresses for each
   account.
   
-> **IMPORTANT:** The BIP-44 protocol basically looks for 20 transactions after 
+> **IMPORTANT:** Wallets following the BIP-44 standard basically look for 20 transactions after 
 > the last transaction received. So if you receive a payment on address generated
 > with address_index = 6, your wallet will only display the money received on 
 > addresses from 0 to 26. 
