@@ -14,7 +14,7 @@ cardano-cli shelley query protocol-parameters \
 #Find your balance and UTXOs:
 cardano-cli shelley query utxo \
    --address $(cat payment.addr) \
-   --mainnet 
+   --mainnet \
  > /tmp/fullUtxo.out
 
 tail -n +3 /tmp/fullUtxo.out | sort -k3 -nr > /tmp/balance.out
@@ -56,7 +56,7 @@ fee=$(cardano-cli shelley transaction calculate-min-fee \
     --tx-out-count 2 \
     --witness-count 1 \
     --byron-witness-count 0 \
-   --mainnet \
+    --mainnet \
     --protocol-params-file /tmp/params.json | awk '{ print $1 }')
 echo fee: $fee
 
