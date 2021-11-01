@@ -66,7 +66,7 @@ txOut=$((${total_balance}-${amount}-${fee}))
 echo Change Output: ${txOut}
 
 # Find the tip of the blockchain:
-currentSlot=$(cardano-cli shelley query tip --mainnet | jq -r '.slotNo')
+currentSlot=$(cardano-cli shelley query tip --mainnet | jq -r '.slot')
 echo Current Slot: $currentSlot
 
 # Build the transaction
